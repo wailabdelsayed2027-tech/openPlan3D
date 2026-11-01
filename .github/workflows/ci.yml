@@ -24,6 +24,10 @@ jobs:
         env:
           NODE_ENV: production
           NPM_CONFIG_INCLUDE: dev
+      # CAD review is built as a separate Three.js application to avoid renderer conflicts.
+      - run: npm run setup:cad-review
+      - run: npm run check:cad-review
+      - run: npm run build:cad-review
       - run: npm run catalog:check
       - run: npm audit --audit-level=high
       - run: npm run check
