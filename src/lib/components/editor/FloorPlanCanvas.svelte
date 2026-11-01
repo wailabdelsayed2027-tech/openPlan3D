@@ -14,6 +14,7 @@
   import type { Point, Wall, Door, Window as Win, FurnitureItem, Stair, Column, GuideLine, Measurement, Annotation, TextAnnotation, CustomEntourageDef } from '$lib/models/types';
   import type { Floor, Room } from '$lib/models/types';
   import { resolveRoomGeometry, roomLabelPosition, roomCentroid } from '$lib/utils/roomDetection';
+  import { clearRectangularRoomDimensions } from '$lib/utils/roomClearDimensions';
   import { roomHoles } from '$lib/utils/roomNesting';
   import { getFloorBelow } from '$lib/utils/floors';
   import { detectOuterWalls } from '$lib/utils/outerWalls';
@@ -869,6 +870,56 @@
     _drawRooms(getCS(), currentFloor, detectedRooms, currentSelectedRoomId, showRoomLabels, showDimensions, dimSettings, roomPolygons);
   }
 
+  /**
+   * Live, actual inner-face dimensions for selected orthogonal rooms.
+   * Refuse to display invented rectangular values for irregular rooms.
+   */
+  function drawSelectedRoomClearDimensions() {
+    if (!showDimensions || !currentFloor || !currentSelectedRoomId || !ctx) return;
+    const polygon = roomPolygons.get(currentSelectedRoomId);
+    if (!polygon) return;
+    const clear = clearRectangularRoomDimensions(polygon, currentFloor.walls);
+    if (!clear) return;
+    const y = Math.min(clear.innerBottomCm - 20, clear.innerTopCm + Math.min(55, clear.clearDepthCm * 0.2));
+    const x = Math.min(clear.innerRightCm - 20, clear.innerLeftCm + Math.min(55, clear.clearWidthCm * 0.2));
+    if (y <= clear.innerTopCm || x <= clear.innerLeftCm) return;
+    const horizontalA = worldToScreen(clear.innerLeftCm, y);
+    const horizontalB = worldToScreen(clear.innerRightCm, y);
+    const verticalA = worldToScreen(x, clear.innerTopCm);
+    const verticalB = worldToScreen(x, clear.innerBottomCm);
+    ctx.save();
+    ctx.strokeStyle = '#087a9b';
+    ctx.fillStyle = '#075985';
+    ctx.lineWidth = 1.3;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(horizontalA.x, horizontalA.y);
+    ctx.lineTo(horizontalB.x, horizontalB.y);
+    ctx.moveTo(verticalA.x, verticalA.y);
+    ctx.lineTo(verticalB.x, verticalB.y);
+    const tick = 5;
+    for (const p of [horizontalA, horizontalB]) {
+      ctx.moveTo(p.x, p.y - tick);
+      ctx.lineTo(p.x, p.y + tick);
+    }
+    for (const p of [verticalA, verticalB]) {
+      ctx.moveTo(p.x - tick, p.y);
+      ctx.lineTo(p.x + tick, p.y);
+    }
+    ctx.stroke();
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText((clear.clearWidthCm / 100).toFixed(2) + ' m صافٍ',
+      (horizontalA.x + horizontalB.x) / 2, horizontalA.y - 4);
+    ctx.save();
+    ctx.translate(verticalA.x - 5, (verticalA.y + verticalB.y) / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText((clear.clearDepthCm / 100).toFixed(2) + ' m صافٍ', 0, 0);
+    ctx.restore();
+    ctx.restore();
+  }
+
   function drawAngleGuides(start: Point) {
     const s = worldToScreen(start.x, start.y);
     ctx.strokeStyle = '#3b82f640';
@@ -1216,6 +1267,9 @@
         drawFurniture(fi, selected);
       }
     }
+
+    // Selected room clear-face dimensions are placed above walls and furniture.
+    drawSelectedRoomClearDimensions();
 
     // Object distance dimensions (from selected furniture to room boundaries)
     if (showDimensions && dimSettings.showObjectDistance && currentSelectedId && showFurniture) {
