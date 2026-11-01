@@ -2,6 +2,8 @@ import { selectionRotation } from '$lib/utils/selectionRotation';
 import { splitWallRoomReferences } from '$lib/utils/splitWallRooms';
 import { splitWallGeometry } from '$lib/utils/splitWallGeometry';
 import { wallPathProfile } from '$lib/utils/wallProfiles';
+import { nearestOpeningPosition, wallOpeningError } from '$lib/utils/openingRules';
+import { normalizePlanRotation, validStairEdit } from '$lib/utils/stairReview2d';
 import { duplicatePlanSelection, pastePlanSelection, shiftedOpeningPosition } from '$lib/utils/duplicateSelection';
 import { writable, derived, get, type Writable } from 'svelte/store';
 import type { Project, Floor, Wall, Door, Window as Win, FurnitureItem, Point, Stair, Column, BackgroundImage, GuideLine, ElementGroup, EntourageItem, InterchangeState } from '$lib/models/types';
@@ -332,8 +334,14 @@ export function addDoor(wallId: string, position: number, doorType: Door['type']
     garage: { width: 240, height: 210 },
   };
   const { width, height } = defaults[doorType];
+  const floor = get(activeFloor);
+  const wall = floor?.walls.find(w => w.id === wallId);
+  const safePosition = nearestOpeningPosition(wall, position, width, [
+    ...(floor?.doors ?? []), ...(floor?.windows ?? [])
+  ]);
+  if (safePosition === null) return '';
   mutate((f) => {
-    f.doors.push({ id, wallId, position, width, height, type: doorType, swingDirection: 'left', flipSide: false });
+    f.doors.push({ id, wallId, position: safePosition, width, height, type: doorType, swingDirection: 'left', flipSide: false });
   }, `Added ${doorType} door`);
   if (typeof window !== 'undefined') {
     import('$lib/stores/onboarding.svelte').then(m => m.triggerTip('first-door', 300, 120)).catch(() => {});
@@ -351,8 +359,14 @@ export function addWindow(wallId: string, position: number, windowType: import('
     bay: { width: 200, height: 150 },
   };
   const { width, height } = defaults[windowType];
+  const floor = get(activeFloor);
+  const wall = floor?.walls.find(w => w.id === wallId);
+  const safePosition = nearestOpeningPosition(wall, position, width, [
+    ...(floor?.doors ?? []), ...(floor?.windows ?? [])
+  ]);
+  if (safePosition === null) return '';
   mutate((f) => {
-    f.windows.push({ id, wallId, position, width, height, sillHeight: 90, type: windowType });
+    f.windows.push({ id, wallId, position: safePosition, width, height, sillHeight: 90, type: windowType });
   }, `Added ${windowType} window`);
   return id;
 }
@@ -442,6 +456,7 @@ export function rotateFurniture(id: string, angle: number) {
 }
 
 export function setFurnitureRotation(id: string, angle: number) {
+  if (!Number.isFinite(angle)) return;
   mutate((f) => {
     const item = f.furniture.find((fi) => fi.id === id);
     if (item) item.rotation = ((angle % 360) + 360) % 360;
@@ -485,6 +500,8 @@ export function addStair(position: Point): string {
 }
 
 export function updateStair(id: string, updates: Partial<Stair>) {
+  const current = get(activeFloor)?.stairs?.find(s => s.id === id);
+  if (!current || !validStairEdit({ ...current, ...updates })) return;
   mutate((f) => {
     if (!f.stairs) return;
     const s = f.stairs.find((s) => s.id === id);
@@ -720,6 +737,17 @@ export function resizeWallLength(id: string, length: number, fixed: WallEndpoint
   try { changes = planWallResize(floor.walls, id, length, fixed); }
   catch (error) { return error instanceof Error ? error.message : 'The wall could not be resized.'; }
   if (!changes.size) return null;
+  // Never resize a connected wall so its existing doors/windows become clipped.
+  const affectedIds = new Set(changes.keys());
+  const allOpenings = [...floor.doors, ...floor.windows];
+  for (const oldWall of floor.walls) {
+    if (!affectedIds.has(oldWall.id)) continue;
+    const resizedWall = { ...oldWall, ...changes.get(oldWall.id) };
+    for (const opening of allOpenings.filter(o => o.wallId === oldWall.id)) {
+      const reason = wallOpeningError(resizedWall, opening, allOpenings);
+      if (reason) return reason;
+    }
+  }
   mutate(f => {
     for (const wall of f.walls) {
       const updates = changes.get(wall.id);
@@ -750,6 +778,15 @@ export function updateWall(id: string, updates: Partial<Wall>) {
   if (['start', 'end'].some(key => key in updates && !finitePoint(updates[key as 'start' | 'end']))) return;
   if (updates.curvePoint !== undefined && !finitePoint(updates.curvePoint)) return;
   if (['height', 'startHeight', 'endHeight'].some(key => key in updates && !validWallHeight(updates[key as keyof Wall]))) return;
+  // Direct wall endpoint edits must not cut the wall shorter than an existing opening.
+  if (['start', 'end', 'curvePoint'].some(key => key in updates)) {
+    const floor = get(activeFloor);
+    const openings = [...(floor?.doors ?? []), ...(floor?.windows ?? [])];
+    const editedWall = { ...wall, ...updates };
+    for (const opening of openings.filter(item => item.wallId === wall.id)) {
+      if (wallOpeningError(editedWall, opening, openings)) return;
+    }
+  }
   mutate((f) => {
     const w = f.walls.find((w) => w.id === id);
     if (w) {
@@ -804,6 +841,10 @@ export function updateDoor(id: string, updates: Partial<Door>) {
   if (!door || unchangedFields(door, updates)) return;
   if (['width', 'height'].some(key => key in updates && !validPositiveDimension(updates[key as 'width' | 'height']))) return;
   if ('position' in updates && !validOpeningPosition(updates.position)) return;
+  const floor = get(activeFloor);
+  const candidate = { ...door, ...updates };
+  const wall = floor?.walls.find(w => w.id === candidate.wallId);
+  if (wallOpeningError(wall, candidate, [...(floor?.doors ?? []), ...(floor?.windows ?? [])])) return;
   mutate((f) => {
     const d = f.doors.find((d) => d.id === id);
     if (d) Object.assign(d, updates);
@@ -816,6 +857,10 @@ export function updateWindow(id: string, updates: Partial<Win>) {
   if (['width', 'height'].some(key => key in updates && !validPositiveDimension(updates[key as 'width' | 'height']))) return;
   if ('sillHeight' in updates && !validWallHeight(updates.sillHeight)) return;
   if ('position' in updates && !validOpeningPosition(updates.position)) return;
+  const floor = get(activeFloor);
+  const candidate = { ...window, ...updates };
+  const wall = floor?.walls.find(w => w.id === candidate.wallId);
+  if (wallOpeningError(wall, candidate, [...(floor?.doors ?? []), ...(floor?.windows ?? [])])) return;
   mutate((f) => {
     const w = f.windows.find((w) => w.id === id);
     if (w) Object.assign(w, updates);
@@ -823,6 +868,11 @@ export function updateWindow(id: string, updates: Partial<Win>) {
 }
 
 export function updateFurniture(id: string, updates: Partial<FurnitureItem>) {
+  if (updates.rotation !== undefined) {
+    const normalized = normalizePlanRotation(updates.rotation);
+    if (!Number.isFinite(normalized)) return;
+    updates = { ...updates, rotation: normalized };
+  }
   const item = get(activeFloor)?.furniture.find(item => item.id === id);
   if (!item) return;
   if (Object.keys(updates).every(key => {

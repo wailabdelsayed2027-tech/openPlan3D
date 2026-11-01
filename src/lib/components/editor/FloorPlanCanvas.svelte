@@ -14,6 +14,7 @@
   import type { Point, Wall, Door, Window as Win, FurnitureItem, Stair, Column, GuideLine, Measurement, Annotation, TextAnnotation, CustomEntourageDef } from '$lib/models/types';
   import type { Floor, Room } from '$lib/models/types';
   import { resolveRoomGeometry, roomLabelPosition, roomCentroid } from '$lib/utils/roomDetection';
+  import { clearRectangularRoomDimensions } from '$lib/utils/roomClearDimensions';
   import { roomHoles } from '$lib/utils/roomNesting';
   import { getFloorBelow } from '$lib/utils/floors';
   import { detectOuterWalls } from '$lib/utils/outerWalls';
@@ -73,6 +74,7 @@
 
   // Wall drawing state
   let wallStart: Point | null = $state(null);
+  let openingPlacementError = $state('');
   // Digits typed while drawing a wall — Enter places the wall at exactly this length (issue #6)
   let typedWallLength = $state('');
   let wallSequenceFirst: Point | null = $state(null);
@@ -869,6 +871,56 @@
     _drawRooms(getCS(), currentFloor, detectedRooms, currentSelectedRoomId, showRoomLabels, showDimensions, dimSettings, roomPolygons);
   }
 
+  /**
+   * Live, actual inner-face dimensions for selected orthogonal rooms.
+   * Refuse to display invented rectangular values for irregular rooms.
+   */
+  function drawSelectedRoomClearDimensions() {
+    if (!showDimensions || !currentFloor || !currentSelectedRoomId || !ctx) return;
+    const polygon = roomPolygons.get(currentSelectedRoomId);
+    if (!polygon) return;
+    const clear = clearRectangularRoomDimensions(polygon, currentFloor.walls);
+    if (!clear) return;
+    const y = Math.min(clear.innerBottomCm - 20, clear.innerTopCm + Math.min(55, clear.clearDepthCm * 0.2));
+    const x = Math.min(clear.innerRightCm - 20, clear.innerLeftCm + Math.min(55, clear.clearWidthCm * 0.2));
+    if (y <= clear.innerTopCm || x <= clear.innerLeftCm) return;
+    const horizontalA = worldToScreen(clear.innerLeftCm, y);
+    const horizontalB = worldToScreen(clear.innerRightCm, y);
+    const verticalA = worldToScreen(x, clear.innerTopCm);
+    const verticalB = worldToScreen(x, clear.innerBottomCm);
+    ctx.save();
+    ctx.strokeStyle = '#087a9b';
+    ctx.fillStyle = '#075985';
+    ctx.lineWidth = 1.3;
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(horizontalA.x, horizontalA.y);
+    ctx.lineTo(horizontalB.x, horizontalB.y);
+    ctx.moveTo(verticalA.x, verticalA.y);
+    ctx.lineTo(verticalB.x, verticalB.y);
+    const tick = 5;
+    for (const p of [horizontalA, horizontalB]) {
+      ctx.moveTo(p.x, p.y - tick);
+      ctx.lineTo(p.x, p.y + tick);
+    }
+    for (const p of [verticalA, verticalB]) {
+      ctx.moveTo(p.x - tick, p.y);
+      ctx.lineTo(p.x + tick, p.y);
+    }
+    ctx.stroke();
+    ctx.font = 'bold 11px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText((clear.clearWidthCm / 100).toFixed(2) + ' m صافٍ',
+      (horizontalA.x + horizontalB.x) / 2, horizontalA.y - 4);
+    ctx.save();
+    ctx.translate(verticalA.x - 5, (verticalA.y + verticalB.y) / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText((clear.clearDepthCm / 100).toFixed(2) + ' m صافٍ', 0, 0);
+    ctx.restore();
+    ctx.restore();
+  }
+
   function drawAngleGuides(start: Point) {
     const s = worldToScreen(start.x, start.y);
     ctx.strokeStyle = '#3b82f640';
@@ -1216,6 +1268,9 @@
         drawFurniture(fi, selected);
       }
     }
+
+    // Selected room clear-face dimensions are placed above walls and furniture.
+    drawSelectedRoomClearDimensions();
 
     // Object distance dimensions (from selected furniture to room boundaries)
     if (showDimensions && dimSettings.showObjectDistance && currentSelectedId && showFurniture) {
@@ -2655,14 +2710,24 @@
     } else if (tool === 'door') {
       const wall = findWallAt(wp);
       if (wall) {
-        addDoor(wall.id, positionOnWall(wp, wall), currentDoorType);
-        selectedTool.set('select');
+        const placedId = addDoor(wall.id, positionOnWall(wp, wall), currentDoorType);
+        if (placedId) {
+          openingPlacementError = '';
+          selectedTool.set('select');
+        } else {
+          openingPlacementError = 'الفتحة أكبر من المساحة المتاحة، أو متداخلة مع فتحة أخرى في نفس الحائط.';
+        }
       }
     } else if (tool === 'window') {
       const wall = findWallAt(wp);
       if (wall) {
-        addWindow(wall.id, positionOnWall(wp, wall), currentWindowType);
-        selectedTool.set('select');
+        const placedId = addWindow(wall.id, positionOnWall(wp, wall), currentWindowType);
+        if (placedId) {
+          openingPlacementError = '';
+          selectedTool.set('select');
+        } else {
+          openingPlacementError = 'الفتحة أكبر من المساحة المتاحة، أو متداخلة مع فتحة أخرى في نفس الحائط.';
+        }
       }
     }
   }
@@ -3579,8 +3644,13 @@
         const id = itemType === 'door'
           ? addDoor(target.wallId, target.position, itemId as Door['type'])
           : addWindow(target.wallId, target.position, itemId as Win['type']);
-        selectedElementId.set(id);
-        selectedTool.set('select');
+        if (id) {
+          openingPlacementError = '';
+          selectedElementId.set(id);
+          selectedTool.set('select');
+        } else {
+          openingPlacementError = 'لا يمكن وضع الفتحة هنا: تحقّق من طول الحائط والفتحات المجاورة.';
+        }
       }
     } else if (itemType === 'room') {
       const preset = roomPresets.find(p => p.id === itemId);
@@ -3914,6 +3984,12 @@
     ondragleave={onDragLeave}
     ondrop={onDrop}
   ></canvas>
+  {#if openingPlacementError}
+    <div role="alert" class="absolute bottom-20 left-1/2 z-40 flex max-w-[90%] -translate-x-1/2 items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 shadow-lg" dir="rtl">
+      <span>{openingPlacementError}</span>
+      <button type="button" aria-label="إغلاق تنبيه الفتحة" class="rounded border border-amber-400 px-2 py-1" onclick={() => openingPlacementError = ''}>إغلاق</button>
+    </div>
+  {/if}
   <!-- Elevation pick mode hint chip -->
   {#if pickingElevation}
     <div class="absolute top-3 left-1/2 -translate-x-1/2 z-30 bg-slate-800/90 text-white text-xs font-medium px-3.5 py-1.5 rounded-full shadow-lg pointer-events-none flex items-center gap-1.5">
