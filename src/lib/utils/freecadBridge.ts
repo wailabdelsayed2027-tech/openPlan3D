@@ -5,7 +5,7 @@
  * It does not automate column/beam sizing or certify geometry.
  */
 export function freecadImportMacro(): string {
-  return String.raw\`# Architect Studio -> FreeCAD DXF exchange
+  return String.raw`# Architect Studio -> FreeCAD DXF exchange
 # Open FreeCAD on your computer, then Macro > Macros > Create/Run this macro.
 # Select a DXF exported from Architect Studio. Save as a native .FCStd document.
 import FreeCAD as App
@@ -38,7 +38,7 @@ if src:
     except Exception as exc:
         App.Console.PrintError("DXF import error: " + str(exc) + "\\n")
         raise
-\`;
+`;
 }
 
 export function downloadFreecadMacro(): void {
