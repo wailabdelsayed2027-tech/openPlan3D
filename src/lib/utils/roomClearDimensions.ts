@@ -42,6 +42,8 @@ export function clearRectangularRoomDimensions(polygon: Point[], walls: Wall[]) 
   if (clearWidthCm <= 0 || clearDepthCm <= 0) return null;
   return {
     clearWidthCm, clearDepthCm,
+    innerLeftCm: minX + left / 2, innerRightCm: maxX - right / 2,
+    innerTopCm: minY + top / 2, innerBottomCm: maxY - bottom / 2,
     clearAreaM2: clearWidthCm * clearDepthCm / 10000,
     centerlineWidthCm: width, centerlineDepthCm: depth
   };
