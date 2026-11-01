@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Architect Studio — MLightCAD DXF Review</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body { height: 100%; padding: 0; margin: 0; font: 14px system-ui, sans-serif; color: #e5eef8; background: #070f1e; }
+    #app { height: 100%; display: flex; flex-direction: column; min-height: 0; }
+    header { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 8px 12px; background: #152237; border-bottom: 1px solid #3d526a; }
+    button { background: #2076aa; border: 0; color: white; border-radius: 7px; padding: 8px 14px; cursor: pointer; }
+    input { min-width: 210px; max-width: 100%; }
+    p { margin: 4px 0; color: #b7cadc; font-size: 12px; }
+    #cad-container { position: relative; min-width: 0; min-height: 0; flex: 1; overflow: hidden; direction: ltr; }
+    #status { font-size: 12px; color: #ccdeee; }
+    #notice { padding: 6px 10px; font-size: 12px; background: #142136; color: #fbbf24; }
+    @media (max-width: 700px) { header { gap: 4px; } button { padding: 7px 9px; } }
+  </style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <b>مراجعة DXF — MLightCAD</b>
+    <input type="file" id="file" accept=".dxf" aria-label="اختر ملف DXF" />
+    <button type="button" id="fit" title="إظهار كامل الرسم">Zoom Extents</button>
+    <span id="status" role="status">اختر DXF من جهازك. لن يتم رفع الملف لخادم.</span>
+  </header>
+  <div id="notice">نسخة معاينة للقياس والمراجعة؛ لا تُستخدم بدل الرسم الهندسي الأصلي أو المراجعة الإنشائية. DWG غير مفعّل.</div>
+  <div id="cad-container" aria-label="MLightCAD drawing viewport"></div>
+</div>
+<script type="module" src="/src/main.ts"></script>
+</body>
+</html>
