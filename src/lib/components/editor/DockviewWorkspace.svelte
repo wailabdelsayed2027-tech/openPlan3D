@@ -42,7 +42,6 @@
 
   let host: HTMLDivElement;
   let api: DockviewApi | undefined;
-  let ready = $state(false);
   let error = $state('');
 
   function defaultPanels(instance: DockviewApi): void {
@@ -111,8 +110,10 @@
       observer.observe(host);
       resize();
       const subscription = api.onDidLayoutChange(saveLayout);
-      ready = true;
+      const onOpenLayers = () => openLayers();
+      window.addEventListener('openplan3d:dock-open-layers', onOpenLayers);
       return () => {
+        window.removeEventListener('openplan3d:dock-open-layers', onOpenLayers);
         subscription.dispose();
         observer.disconnect();
         api?.dispose();
