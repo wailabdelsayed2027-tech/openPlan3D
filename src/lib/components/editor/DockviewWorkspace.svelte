@@ -7,13 +7,17 @@
   import BuildPanel from '$lib/components/sidebar/BuildPanel.svelte';
   import PropertiesPanel from '$lib/components/sidebar/PropertiesPanel.svelte';
   import LayersPanel from '$lib/components/sidebar/LayersPanel.svelte';
+  import MlightCadDock from './MlightCadDock.svelte';
+  import FreecadBridgePanel from './FreecadBridgePanel.svelte';
 
   const STORAGE_KEY = 'openplan3d:dockview-layout:v1';
   const views = {
     canvas: DockPlanCanvas,
     tools: BuildPanel,
     properties: PropertiesPanel,
-    layers: LayersPanel
+    layers: LayersPanel,
+    cadReview: MlightCadDock,
+    freecad: FreecadBridgePanel
   } as const;
   type ViewName = keyof typeof views;
 
@@ -83,6 +87,19 @@
     });
   }
 
+  function openWorkspacePanel(id: 'cadReview' | 'freecad'): void {
+    if (!api) return;
+    const existing = api.getPanel(id);
+    if (existing) { existing.api.setActive(); return; }
+    const referencePanel = api.getPanel('canvas') ? 'canvas' : api.panels[0]?.id;
+    api.addPanel({
+      id,
+      component: id,
+      title: id === 'cadReview' ? 'مراجعة DXF · MLightCAD' : 'التصدير إلى FreeCAD',
+      ...(referencePanel ? { position: { referencePanel, direction: 'right' as const } } : {})
+    });
+  }
+
   function floatProperties(): void {
     if (!api) return;
     const panel = api.getPanel('properties');
@@ -131,6 +148,8 @@
     <span class="hidden text-slate-400 xl:inline">اسحب التبويبات لتحريك النوافذ أو تغيير مكانها</span>
     <div class="flex-1"></div>
     <button type="button" class="rounded bg-slate-700 px-2 py-1 hover:bg-slate-600" onclick={openLayers}>الطبقات</button>
+    <button type="button" data-open-mlightcad class="rounded bg-sky-700 px-2 py-1 hover:bg-sky-600" onclick={() => openWorkspacePanel("cadReview")}>مراجعة DXF</button>
+    <button type="button" data-open-freecad class="rounded bg-slate-700 px-2 py-1 hover:bg-slate-600" onclick={() => openWorkspacePanel("freecad")}>FreeCAD</button>
     <button type="button" class="rounded bg-slate-700 px-2 py-1 hover:bg-slate-600" onclick={floatProperties}>نافذة عائمة</button>
     <button type="button" class="rounded bg-slate-700 px-2 py-1 hover:bg-slate-600" onclick={resetLayout}>إعادة الترتيب</button>
   </div>
