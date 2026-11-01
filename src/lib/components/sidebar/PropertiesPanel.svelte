@@ -6,7 +6,10 @@
   import { t, locale, type TranslationKey } from '$lib/i18n';
   const furnitureFinishLabels: Record<string, TranslationKey> = {"Wood": "furnitureFinish.Wood", "Metal": "furnitureFinish.Metal", "Fabric": "furnitureFinish.Fabric", "Leather": "furnitureFinish.Leather", "Glass": "furnitureFinish.Glass", "Plastic": "furnitureFinish.Plastic", "Stone": "furnitureFinish.Stone", "Ceramic": "furnitureFinish.Ceramic"};
   import { furnitureFinishes } from '$lib/utils/furnitureFinishes';
-  import { resolveRooms } from '$lib/utils/roomDetection';
+  import { resolveRooms, getRoomPolygon } from '$lib/utils/roomDetection';
+  import { clearRectangularRoomDimensions } from '$lib/utils/roomClearDimensions';
+  import { reviewStair2d, normalizePlanRotation } from '$lib/utils/stairReview2d';
+  import { wallOpeningError } from '$lib/utils/openingRules';
   import { onDestroy } from 'svelte';
   import ItemDetailsPanel from './ItemDetailsPanel.svelte';
   import type { DetailTarget } from '$lib/models/types';
@@ -59,6 +62,27 @@
   let selectedRoom = $derived(floor && selRoomId
     ? resolveRooms(floor, detectedRooms).find(r => r.id === selRoomId) ?? null
     : null);
+
+  let roomClearDimensions = $derived(
+    selectedRoom && floor
+      ? clearRectangularRoomDimensions(getRoomPolygon(selectedRoom, floor.walls), floor.walls)
+      : null
+  );
+  let selectedStairReview = $derived(selectedStair ? reviewStair2d(selectedStair) : null);
+  let openingEditError = $state('');
+
+  function checkedDoorEdit(updates: Partial<Door>) {
+    if (!selectedDoor || !floor) return;
+    const candidate = { ...selectedDoor, ...updates };
+    const wall = floor.walls.find(w => w.id === candidate.wallId);
+    const problem = wallOpeningError(wall, candidate, [...floor.doors, ...floor.windows]);
+    if (problem) {
+      openingEditError = 'الباب خارج حدود الحائط أو متداخل مع باب أو شباك آخر.';
+      return;
+    }
+    openingEditError = '';
+    updateDoor(selectedDoor.id, updates);
+  }
 
   // Helper to get the parent wall for selected door/window
   let selectedDoorWall = $derived((selectedDoor && floor?.walls?.find(w => w.id === selectedDoor.wallId)) ?? null);
@@ -154,7 +178,7 @@
     updateWall(selectedWall.id, { color: (e.target as HTMLInputElement).value });
   }
   function onDoorWidth(e: Event) {
-    if (selectedDoor) dimensionInput(e, selectedDoor.width, value => updateDoor(selectedDoor!.id, { width: value }));
+    if (selectedDoor) dimensionInput(e, selectedDoor.width, value => checkedDoorEdit({ width: value }));
   }
   function onDoorHeight(e: Event) {
     if (selectedDoor) dimensionInput(e, selectedDoor.height ?? 210, value => updateDoor(selectedDoor!.id, { height: value }));
@@ -215,7 +239,7 @@
   }
   function onFurnitureRotation(e: Event) {
     if (!selectedFurniture) return;
-    scalarInput(e, selectedFurniture.rotation, value => updateFurniture(selectedFurniture!.id, { rotation: value }));
+    scalarInput(e, selectedFurniture.rotation, value => updateFurniture(selectedFurniture!.id, { rotation: normalizePlanRotation(value) }));
   }
   function resetFurnitureDefaults() {
     if (!selectedFurniture) return;
@@ -227,14 +251,14 @@
     if (!selectedDoor || !selectedDoorWall) return;
     const length = calcWallLength(selectedDoorWall);
     if (!Number.isFinite(length) || length <= 0) return;
-    dimensionInput(e, length * selectedDoor.position, value => updateDoor(selectedDoor!.id, { position: value / length }), true, length);
+    dimensionInput(e, length * selectedDoor.position, value => checkedDoorEdit({ position: value / length }), true, length);
   }
   
   function onDoorDistFromB(e: Event) {
     if (!selectedDoor || !selectedDoorWall) return;
     const length = calcWallLength(selectedDoorWall);
     if (!Number.isFinite(length) || length <= 0) return;
-    dimensionInput(e, length * (1 - selectedDoor.position), value => updateDoor(selectedDoor!.id, { position: 1 - value / length }), true, length);
+    dimensionInput(e, length * (1 - selectedDoor.position), value => checkedDoorEdit({ position: 1 - value / length }), true, length);
   }
 
   // Window distance handlers
@@ -542,6 +566,9 @@
       <span class="w-6 h-6 bg-amber-100 rounded flex items-center justify-center text-xs">🚪</span>
       {$t('openingProperties.door')}
     </h3>
+    {#if openingEditError}
+      <p role="alert" class="mb-3 rounded border border-amber-300 bg-amber-50 p-2 text-xs text-amber-800">{openingEditError}</p>
+    {/if}
     <div class="space-y-3">
       <label class="block">
         <span class="text-xs text-gray-500">{$t('openingProperties.width')} ({unitLabel()})</span>
@@ -744,6 +771,16 @@
         />
       </label>
 
+      <!-- Quick compass angles: leave arbitrary numeric rotations available. -->
+      <div class="grid grid-cols-4 gap-1" role="group" aria-label="اتجاه الفرش">
+        {#each [0, 90, 180, 270] as angle}
+          <button type="button" aria-label={'اتجاه الفرش ' + angle + ' درجة'}
+            aria-pressed={Math.abs(normalizePlanRotation(selectedFurniture.rotation) - angle) < 0.001}
+            onclick={() => updateFurniture(selectedFurniture!.id, { rotation: angle })}
+            class="rounded border border-gray-200 px-1 py-1.5 text-xs hover:bg-sky-50"
+          >{angle}°</button>
+        {/each}
+      </div>
       <!-- Rotate / Flip controls -->
       <div class="flex gap-1">
         <button
@@ -810,6 +847,15 @@
         <span class="text-xs text-gray-500">{$t('roomProperties.area')}</span>
         <p class="text-sm text-gray-700">{formatArea(selectedRoom.area, settings.units)}</p>
       </div>
+      {#if roomClearDimensions}
+        <div class="rounded border border-sky-200 bg-sky-50 p-2 text-xs text-slate-700" data-clear-room-dimensions>
+          <div class="font-semibold">الأبعاد الداخلية الصافية — غرفة مستطيلة</div>
+          <div>العرض: {formatLength(roomClearDimensions.clearWidthCm, settings.units)}</div>
+          <div>الطول: {formatLength(roomClearDimensions.clearDepthCm, settings.units)}</div>
+          <div>المساحة الصافية التقريبية: {roomClearDimensions.clearAreaM2.toFixed(2)} م²</div>
+          <div class="mt-1 text-slate-500">محسوبة من محور الحوائط ناقص نصف السمك بكل جانب؛ يلزم مراجعة التشطيبات.</div>
+        </div>
+      {/if}
       <!-- Room Color -->
       <label class="flex items-center gap-2 text-sm text-gray-700">
         <input type="checkbox" checked={selectedRoom.floorOpening ?? false}
@@ -905,6 +951,18 @@
       <span class="w-6 h-6 bg-gray-200 rounded flex items-center justify-center text-xs">🪜</span>
       {$t('stairProperties.heading')}
     </h3>
+    {#if selectedStairReview}
+      <div class="mb-3 rounded border border-slate-200 bg-slate-50 p-2 text-xs" data-stair-geometry-review>
+        <div class="font-semibold">مراجعة هندسية مبدئية للسلم</div>
+        <div>ارتفاع الدور المفترض: 270 سم • القائمة: {Number.isFinite(selectedStairReview.riserCm) ? selectedStairReview.riserCm.toFixed(2) : '—'} سم</div>
+        <div>النايمة المستهدفة: 30 سم • البسطة: 120 سم</div>
+        <div>الحيز المطلوب تقديريًا: {selectedStairReview.requiredWidthCm} × {selectedStairReview.requiredDepthCm} سم</div>
+        {#each selectedStairReview.issues as issue}
+          <p role="status" class="mt-1 text-amber-700">⚠ {issue}</p>
+        {/each}
+        <p class="mt-1 text-gray-500">الحساب مبدئي؛ توزيع القلبات والرمز المرسوم يحتاج مراجعة قبل التنفيذ.</p>
+      </div>
+    {/if}
     <div class="space-y-3">
       <label class="block">
         <span class="text-xs text-gray-500">{$t('openingProperties.type')}</span>
