@@ -5,6 +5,8 @@ test('Dockview exposes MLightCAD and FreeCAD integration tabs without modifying 
   await expect(page.locator('[data-dock-workspace]')).toBeVisible();
   await page.locator('[data-open-mlightcad]').click();
   await expect(page.locator('[data-mlightcad-review]')).toBeVisible();
+  const reviewFrame = page.frameLocator('[data-mlightcad-review] iframe');
+  await expect(reviewFrame.locator('#file')).toBeVisible();
   await page.locator('[data-open-freecad]').click();
   await expect(page.locator('[data-freecad-bridge]')).toBeVisible();
   await expect(page.getByRole('button', { name: /تصدير المسقط DXF/ })).toBeVisible();
