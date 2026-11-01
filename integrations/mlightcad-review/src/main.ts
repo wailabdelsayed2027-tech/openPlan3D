@@ -68,8 +68,7 @@ file.addEventListener('change', () => {
 
 zoomFit.addEventListener('click', () => {
   try {
-    const current = manager?.curDocument;
-    if (current) void current.editor.sendStringToExecute('zoom\nall');
+    if (manager?.curDocument) manager.sendStringToExecute('zoom\nall');
   } catch {
     info.textContent = 'يمكنك استخدام عجلة الماوس للتكبير أو السحب الأوسط للتحريك.';
   }
