@@ -51,7 +51,8 @@
 		"jszip": "^3.10.1",
 		"svg-pathdata": "6.0.3",
 		"three-gpu-pathtracer": "0.0.24",
-		"three-mesh-bvh": "0.9.10"
+		"three-mesh-bvh": "0.9.10",
+		"dockview": "8.8.3"
 	},
 	"overrides": {
 		"@sveltejs/kit": {

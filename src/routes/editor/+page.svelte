@@ -19,8 +19,19 @@
   import BuildPanel from '$lib/components/sidebar/BuildPanel.svelte';
   import PropertiesPanel from '$lib/components/sidebar/PropertiesPanel.svelte';
   import LayersPanel from '$lib/components/sidebar/LayersPanel.svelte';
+  import DockviewWorkspace from '$lib/components/editor/DockviewWorkspace.svelte';
 
   let showLayers = $state(false);
+  let dockWorkspaceEnabled = $state(false);
+  const dockPreferenceKey = 'openplan3d:use-dockview';
+  function toggleDockWorkspace() {
+    dockWorkspaceEnabled = !dockWorkspaceEnabled;
+    try { localStorage.setItem(dockPreferenceKey, dockWorkspaceEnabled ? '1' : '0'); } catch { /* optional */ }
+  }
+  function toggleEditorLayers() {
+    if (dockWorkspaceEnabled) window.dispatchEvent(new Event('openplan3d:dock-open-layers'));
+    else showLayers = !showLayers;
+  }
   import FloorPlanCanvas from '$lib/components/editor/FloorPlanCanvas.svelte';
   import AlignmentToolbar from '$lib/components/editor/AlignmentToolbar.svelte';
   import UndoHistoryPanel from '$lib/components/editor/UndoHistoryPanel.svelte';
@@ -176,6 +187,12 @@
   }
 
   onMount(() => {
+    try {
+      const dockParam = new URL(window.location.href).searchParams.get('dock');
+      const stored = localStorage.getItem(dockPreferenceKey) === '1';
+      dockWorkspaceEnabled = window.innerWidth >= 768 && (dockParam === '1' || (dockParam !== '0' && stored));
+      if (dockParam === '1') localStorage.setItem(dockPreferenceKey, '1');
+    } catch { dockWorkspaceEnabled = false; }
     void initializeEditor();
     // Imports can replace the active project from either sidebar or toolbar.
     // Keep reloads pointed at that project once initial route loading is complete.
@@ -224,9 +241,12 @@
 
 {#if ready}
   <div class="h-screen flex flex-col overflow-hidden">
-    <TopBar onToggleLayers={() => showLayers = !showLayers} layersOpen={showLayers} onToggleHistory={toggleHistory} historyOpen={showUndoHistory} />
+    <TopBar onToggleLayers={toggleEditorLayers} layersOpen={dockWorkspaceEnabled || showLayers} onToggleHistory={toggleHistory} historyOpen={showUndoHistory} />
     <!-- Keep canvas/viewer controls beneath toolbar menus and project dialogs. -->
     <div class="flex flex-1 overflow-hidden isolate">
+      {#if dockWorkspaceEnabled}
+        <DockviewWorkspace />
+      {:else}
       {#if mode === '2d'}
         <!-- Build panel: inline sidebar on md+, off-canvas drawer on phones -->
         {#if buildPanelOpen}
@@ -260,8 +280,17 @@
         <LayersPanel />
       {/if}
       <PropertiesPanel is3D={mode === '3d'} />
+      {/if}
     </div>
   </div>
+
+  <button type="button"
+    class="hidden md:flex fixed bottom-4 right-4 z-40 items-center rounded-lg border border-slate-500 bg-slate-900 px-3 py-2 text-xs font-semibold text-white shadow-lg hover:bg-slate-700"
+    onclick={toggleDockWorkspace}
+    aria-pressed={dockWorkspaceEnabled}
+    title="Switch between classic editor and Dockview workspace">
+    {dockWorkspaceEnabled ? 'الواجهة الأصلية' : 'واجهة النوافذ العائمة'}
+  </button>
 
   <!-- Tools drawer FAB (mobile only) -->
   {#if mode === '2d'}
