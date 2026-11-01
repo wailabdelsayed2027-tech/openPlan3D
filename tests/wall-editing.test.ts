@@ -134,13 +134,17 @@ describe('dimension mutation safety', () => {
     updateDoor('door', { position }); updateWindow('window', { position });
     expect(serialized()).toBe(before); expect(get(undoHistoryStore).entries).toHaveLength(0);
   });
-  it('accepts fractional dimensions and zero sill/endpoint positions and undoes them', () => {
-    updateDoor('door', { width: 95.125, height: 207.75, position: 0 });
-    updateWindow('window', { width: 125.875, height: 130.25, sillHeight: 0, position: 1 });
-    expect(floor().doors[0]).toMatchObject({ width: 95.125, height: 207.75, position: 0 });
-    expect(floor().windows[0]).toMatchObject({ width: 125.875, height: 130.25, sillHeight: 0, position: 1 });
+  it('accepts fractional dimensions and zero sill but never clips at wall endpoints', () => {
+    updateDoor('door', { width: 95.125, height: 207.75, position: 0.4 });
+    updateWindow('window', { width: 125.875, height: 130.25, sillHeight: 0, position: 0.6 });
+    expect(floor().doors[0]).toMatchObject({ width: 95.125, height: 207.75, position: 0.4 });
+    expect(floor().windows[0]).toMatchObject({ width: 125.875, height: 130.25, sillHeight: 0, position: 0.6 });
     undo(); expect(floor().windows[0].sillHeight).toBe(85.25);
     undo(); expect(floor().doors[0].width).toBe(90.5);
+    const before = serialized();
+    updateDoor('door', { position: 0 });
+    updateWindow('window', { position: 1 });
+    expect(serialized()).toBe(before);
   });
   it('rejects non-finite points and invalid sills, and ignores missing/unchanged edits', () => {
     const before = serialized();
