@@ -778,6 +778,15 @@ export function updateWall(id: string, updates: Partial<Wall>) {
   if (['start', 'end'].some(key => key in updates && !finitePoint(updates[key as 'start' | 'end']))) return;
   if (updates.curvePoint !== undefined && !finitePoint(updates.curvePoint)) return;
   if (['height', 'startHeight', 'endHeight'].some(key => key in updates && !validWallHeight(updates[key as keyof Wall]))) return;
+  // Direct wall endpoint edits must not cut the wall shorter than an existing opening.
+  if (['start', 'end', 'curvePoint'].some(key => key in updates)) {
+    const floor = get(activeFloor);
+    const openings = [...(floor?.doors ?? []), ...(floor?.windows ?? [])];
+    const editedWall = { ...wall, ...updates };
+    for (const opening of openings.filter(item => item.wallId === wall.id)) {
+      if (wallOpeningError(editedWall, opening, openings)) return;
+    }
+  }
   mutate((f) => {
     const w = f.walls.find((w) => w.id === id);
     if (w) {
