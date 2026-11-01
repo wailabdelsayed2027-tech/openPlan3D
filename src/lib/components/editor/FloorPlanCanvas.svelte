@@ -74,6 +74,7 @@
 
   // Wall drawing state
   let wallStart: Point | null = $state(null);
+  let openingPlacementError = $state('');
   // Digits typed while drawing a wall — Enter places the wall at exactly this length (issue #6)
   let typedWallLength = $state('');
   let wallSequenceFirst: Point | null = $state(null);
@@ -2710,13 +2711,23 @@
       const wall = findWallAt(wp);
       if (wall) {
         const placedId = addDoor(wall.id, positionOnWall(wp, wall), currentDoorType);
-        if (placedId) selectedTool.set('select');
+        if (placedId) {
+          openingPlacementError = '';
+          selectedTool.set('select');
+        } else {
+          openingPlacementError = 'الفتحة أكبر من المساحة المتاحة، أو متداخلة مع فتحة أخرى في نفس الحائط.';
+        }
       }
     } else if (tool === 'window') {
       const wall = findWallAt(wp);
       if (wall) {
         const placedId = addWindow(wall.id, positionOnWall(wp, wall), currentWindowType);
-        if (placedId) selectedTool.set('select');
+        if (placedId) {
+          openingPlacementError = '';
+          selectedTool.set('select');
+        } else {
+          openingPlacementError = 'الفتحة أكبر من المساحة المتاحة، أو متداخلة مع فتحة أخرى في نفس الحائط.';
+        }
       }
     }
   }
@@ -3634,8 +3645,11 @@
           ? addDoor(target.wallId, target.position, itemId as Door['type'])
           : addWindow(target.wallId, target.position, itemId as Win['type']);
         if (id) {
+          openingPlacementError = '';
           selectedElementId.set(id);
           selectedTool.set('select');
+        } else {
+          openingPlacementError = 'لا يمكن وضع الفتحة هنا: تحقّق من طول الحائط والفتحات المجاورة.';
         }
       }
     } else if (itemType === 'room') {
@@ -3970,6 +3984,12 @@
     ondragleave={onDragLeave}
     ondrop={onDrop}
   ></canvas>
+  {#if openingPlacementError}
+    <div role="alert" class="absolute bottom-20 left-1/2 z-40 flex max-w-[90%] -translate-x-1/2 items-center gap-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900 shadow-lg" dir="rtl">
+      <span>{openingPlacementError}</span>
+      <button type="button" aria-label="إغلاق تنبيه الفتحة" class="rounded border border-amber-400 px-2 py-1" onclick={() => openingPlacementError = ''}>إغلاق</button>
+    </div>
+  {/if}
   <!-- Elevation pick mode hint chip -->
   {#if pickingElevation}
     <div class="absolute top-3 left-1/2 -translate-x-1/2 z-30 bg-slate-800/90 text-white text-xs font-medium px-3.5 py-1.5 rounded-full shadow-lg pointer-events-none flex items-center gap-1.5">
