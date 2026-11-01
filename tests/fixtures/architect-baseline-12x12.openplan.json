@@ -1,0 +1,507 @@
+{
+  "id": "architect-baseline-1200",
+  "name": "Architect Studio Baseline 12x12",
+  "activeFloorId": "ground",
+  "floors": [
+    {
+      "id": "ground",
+      "name": "Ground Floor",
+      "level": 0,
+      "elevation": 0,
+      "slabThickness": 15,
+      "walls": [
+        {
+          "id": "v-0-0",
+          "start": {
+            "x": 0,
+            "y": 0
+          },
+          "end": {
+            "x": 0,
+            "y": 400
+          },
+          "thickness": 20,
+          "height": 270,
+          "color": "#334155"
+        },
+        {
+          "id": "v-0-1",
+          "start": {
+            "x": 0,
+            "y": 400
+          },
+          "end": {
+            "x": 0,
+            "y": 800
+          },
+          "thickness": 20,
+          "height": 270,
+          "color": "#334155"
+        },
+        {
+          "id": "v-0-2",
+          "start": {
+            "x": 0,
+            "y": 800
+          },
+          "end": {
+            "x": 0,
+            "y": 1200
+          },
+          "thickness": 20,
+          "height": 270,
+          "color": "#334155"
+        },
+        {
+          "id": "v-1-0",
+          "start": {
+            "x": 420,
+            "y": 0
+          },
+          "end": {
+            "x": 420,
+            "y": 400
+          },
+          "thickness": 12,
+          "height": 270,
+          "color": "#334155"
+        },
+        {
+          "id": "v-1-1",
+          "start": {
+            "x": 420,
+            "y": 400
+          },
+          "end": {
+            "x": 420,
+            "y": 800
+          },
+          "thickness": 12,
+          "height": 270,
+          "color": "#334155"
+        },
+        {
+          "id": "v-1-2",
+          "start": {
+            "x": 420,
+            "y": 800
+          },
+          "end": {
+            "x": 420,
+            "y": 1200
+          },
+          "thickness": 12,
+          "height": 270,
+          "color": "#334155"
+        },
+        {
+          "id": "v-2-0",
+          "start": {
+            "x": 700,
+            "y": 0
+          },
+          "end": {
+            "x": 700,
+            "y": 400
+          },
+          "thickness": 12,
+          "height": 270,
+          "color": "#334155"
+        },
+        {
+          "id": "v-2-1",
+          "start": {
+            "x": 700,
+            "y": 400
+          },
+          "end": {
+            "x": 700,
+            "y": 800
+          },
+          "thickness": 12,
+          "height": 270,
+          "color": "#334155"
+        },
+        {
+          "id": "v-2-2",
+          "start": {
+            "x": 700,
+            "y": 800
+          },
+          "end": {
+            "x": 700,
+            "y": 1200
+          },
+          "thickness": 12,
+          "height": 270,
+          "color": "#334155"
+        },
+        {
+          "id": "v-3-0",
+          "start": {
+            "x": 1200,
+            "y": 0
+          },
+          "end": {
+            "x": 1200,
+            "y": 400
+          },
+          "thickness": 20,
+          "height": 270,
+          "color": "#334155"
+        },
+        {
+          "id": "v-3-1",
+          "start": {
+            "x": 1200,
+            "y": 400
+          },
+          "end": {
+            "x": 1200,
+            "y": 800
+          },
+          "thickness": 20,
+          "height": 270,
+          "color": "#334155"
+        },
+        {
+          "id": "v-3-2",
+          "start": {
+            "x": 1200,
+            "y": 800
+          },
+          "end": {
+            "x": 1200,
+            "y": 1200
+          },
+          "thickness": 20,
+          "height": 270,
+          "color": "#334155"
+        },
+        {
+          "id": "h-0-0",
+          "start": {
+            "x": 0,
+            "y": 0
+          },
+          "end": {
+            "x": 420,
+            "y": 0
+          },
+          "thickness": 20,
+          "height": 270,
+          "color": "#334155"
+        },
+        {
+          "id": "h-0-1",
+          "start": {
+            "x": 420,
+            "y": 0
+          },
+          "end": {
+            "x": 700,
+            "y": 0
+          },
+          "thickness": 20,
+          "height": 270,
+          "color": "#334155"
+        },
+        {
+          "id": "h-0-2",
+          "start": {
+            "x": 700,
+            "y": 0
+          },
+          "end": {
+            "x": 1200,
+            "y": 0
+          },
+          "thickness": 20,
+          "height": 270,
+          "color": "#334155"
+        },
+        {
+          "id": "h-1-0",
+          "start": {
+            "x": 0,
+            "y": 400
+          },
+          "end": {
+            "x": 420,
+            "y": 400
+          },
+          "thickness": 12,
+          "height": 270,
+          "color": "#334155"
+        },
+        {
+          "id": "h-1-1",
+          "start": {
+            "x": 420,
+            "y": 400
+          },
+          "end": {
+            "x": 700,
+            "y": 400
+          },
+          "thickness": 12,
+          "height": 270,
+          "color": "#334155"
+        },
+        {
+          "id": "h-1-2",
+          "start": {
+            "x": 700,
+            "y": 400
+          },
+          "end": {
+            "x": 1200,
+            "y": 400
+          },
+          "thickness": 12,
+          "height": 270,
+          "color": "#334155"
+        },
+        {
+          "id": "h-2-0",
+          "start": {
+            "x": 0,
+            "y": 800
+          },
+          "end": {
+            "x": 420,
+            "y": 800
+          },
+          "thickness": 12,
+          "height": 270,
+          "color": "#334155"
+        },
+        {
+          "id": "h-2-1",
+          "start": {
+            "x": 420,
+            "y": 800
+          },
+          "end": {
+            "x": 700,
+            "y": 800
+          },
+          "thickness": 12,
+          "height": 270,
+          "color": "#334155"
+        },
+        {
+          "id": "h-2-2",
+          "start": {
+            "x": 700,
+            "y": 800
+          },
+          "end": {
+            "x": 1200,
+            "y": 800
+          },
+          "thickness": 12,
+          "height": 270,
+          "color": "#334155"
+        },
+        {
+          "id": "h-3-0",
+          "start": {
+            "x": 0,
+            "y": 1200
+          },
+          "end": {
+            "x": 420,
+            "y": 1200
+          },
+          "thickness": 20,
+          "height": 270,
+          "color": "#334155"
+        },
+        {
+          "id": "h-3-1",
+          "start": {
+            "x": 420,
+            "y": 1200
+          },
+          "end": {
+            "x": 700,
+            "y": 1200
+          },
+          "thickness": 20,
+          "height": 270,
+          "color": "#334155"
+        },
+        {
+          "id": "h-3-2",
+          "start": {
+            "x": 700,
+            "y": 1200
+          },
+          "end": {
+            "x": 1200,
+            "y": 1200
+          },
+          "thickness": 20,
+          "height": 270,
+          "color": "#334155"
+        }
+      ],
+      "doors": [],
+      "windows": [],
+      "stairs": [
+        {
+          "id": "stair-1",
+          "position": {
+            "x": 560,
+            "y": 200
+          },
+          "width": 250,
+          "depth": 380,
+          "riserCount": 18,
+          "stairType": "u-shaped",
+          "direction": "up",
+          "rotation": 0
+        }
+      ],
+      "columns": [],
+      "rooms": [
+        {
+          "id": "room-0-0",
+          "name": "غرفة نوم",
+          "walls": [
+            "h-0-0",
+            "h-1-0",
+            "v-0-0",
+            "v-1-0"
+          ],
+          "area": 16.8,
+          "floorTexture": "concrete",
+          "roomType": "indoor"
+        },
+        {
+          "id": "room-0-1",
+          "name": "سلم",
+          "walls": [
+            "h-0-1",
+            "h-1-1",
+            "v-1-0",
+            "v-2-0"
+          ],
+          "area": 11.2,
+          "floorTexture": "concrete",
+          "roomType": "indoor"
+        },
+        {
+          "id": "room-0-2",
+          "name": "غرفة نوم",
+          "walls": [
+            "h-0-2",
+            "h-1-2",
+            "v-2-0",
+            "v-3-0"
+          ],
+          "area": 20,
+          "floorTexture": "concrete",
+          "roomType": "indoor"
+        },
+        {
+          "id": "room-1-0",
+          "name": "ريسبشن",
+          "walls": [
+            "h-1-0",
+            "h-2-0",
+            "v-0-1",
+            "v-1-1"
+          ],
+          "area": 16.8,
+          "floorTexture": "concrete",
+          "roomType": "indoor"
+        },
+        {
+          "id": "room-1-1",
+          "name": "صالة",
+          "walls": [
+            "h-1-1",
+            "h-2-1",
+            "v-1-1",
+            "v-2-1"
+          ],
+          "area": 11.2,
+          "floorTexture": "concrete",
+          "roomType": "indoor"
+        },
+        {
+          "id": "room-1-2",
+          "name": "مطبخ",
+          "walls": [
+            "h-1-2",
+            "h-2-2",
+            "v-2-1",
+            "v-3-1"
+          ],
+          "area": 20,
+          "floorTexture": "concrete",
+          "roomType": "indoor"
+        },
+        {
+          "id": "room-2-0",
+          "name": "غرفة",
+          "walls": [
+            "h-2-0",
+            "h-3-0",
+            "v-0-2",
+            "v-1-2"
+          ],
+          "area": 16.8,
+          "floorTexture": "concrete",
+          "roomType": "indoor"
+        },
+        {
+          "id": "room-2-1",
+          "name": "حمام",
+          "walls": [
+            "h-2-1",
+            "h-3-1",
+            "v-1-2",
+            "v-2-2"
+          ],
+          "area": 11.2,
+          "floorTexture": "concrete",
+          "roomType": "indoor"
+        },
+        {
+          "id": "room-2-2",
+          "name": "منور",
+          "walls": [
+            "h-2-2",
+            "h-3-2",
+            "v-2-2",
+            "v-3-2"
+          ],
+          "area": 20,
+          "floorTexture": "concrete",
+          "roomType": "outdoor"
+        }
+      ],
+      "furniture": [],
+      "annotations": [
+        {
+          "id": "total-width",
+          "x1": 0,
+          "y1": 1250,
+          "x2": 1200,
+          "y2": 1250,
+          "offset": 30,
+          "label": "12 m"
+        }
+      ],
+      "textAnnotations": [],
+      "measurements": [],
+      "guides": [],
+      "groups": []
+    }
+  ],
+  "createdAt": "2026-11-01T00:00:00Z",
+  "updatedAt": "2026-11-01T00:00:00Z"
+}
