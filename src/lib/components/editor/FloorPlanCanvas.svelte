@@ -2655,14 +2655,14 @@
     } else if (tool === 'door') {
       const wall = findWallAt(wp);
       if (wall) {
-        addDoor(wall.id, positionOnWall(wp, wall), currentDoorType);
-        selectedTool.set('select');
+        const placedId = addDoor(wall.id, positionOnWall(wp, wall), currentDoorType);
+        if (placedId) selectedTool.set('select');
       }
     } else if (tool === 'window') {
       const wall = findWallAt(wp);
       if (wall) {
-        addWindow(wall.id, positionOnWall(wp, wall), currentWindowType);
-        selectedTool.set('select');
+        const placedId = addWindow(wall.id, positionOnWall(wp, wall), currentWindowType);
+        if (placedId) selectedTool.set('select');
       }
     }
   }
@@ -3579,8 +3579,10 @@
         const id = itemType === 'door'
           ? addDoor(target.wallId, target.position, itemId as Door['type'])
           : addWindow(target.wallId, target.position, itemId as Win['type']);
-        selectedElementId.set(id);
-        selectedTool.set('select');
+        if (id) {
+          selectedElementId.set(id);
+          selectedTool.set('select');
+        }
       }
     } else if (itemType === 'room') {
       const preset = roomPresets.find(p => p.id === itemId);
